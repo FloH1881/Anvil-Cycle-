@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Anvil Cycle</title>
+
+<!-- ---- Home Screen app support ---- -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anvil Cycle">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#151413">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --iron-950:#151413;
+    --iron-900:#1c1a18;
+    --iron-800:#252220;
+    --iron-700:#332f2b;
+    --iron-600:#4a443e;
+    --iron-400:#8a8074;
+    --iron-200:#c9c1b4;
+    --iron-100:#efe9df;
+    --ember:#e0511f;
+    --ember-dim:#8a3417;
+    --ember-glow:#ff8a4c;
+    --steel:#5b8a9e;
+    --steel-dim:#31505c;
+    --leg:#8a7a4e;
+    --leg-dim:#5c5133;
+    --ok:#7fae6e;
+    --warn:#d9a441;
+    --bad:#c15c4f;
+    --radius:3px;
+    --shadow: 0 8px 24px rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(224,81,31,.08), transparent 60%),
+      var(--iron-950);
+    color:var(--iron-100);
+    font-family:'Archivo', system-ui, sans-serif;
+    min-height:100vh;
+    padding-bottom:100px;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  ::selection{background:var(--ember-dim); color:var(--iron-100);}
+
+  h1,h2,h3,.display{
+    font-family:'Oswald', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    font-weight:600;
+    margin:0;
+  }
+
+  .mono{font-family:'JetBrains Mono', monospace;}
+
+  header.top{
+    position:sticky; top:0; z-index:40;
+    background:linear-gradient(180deg, var(--iron-900) 80%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--iron-700);
+    padding:14px 16px 10px;
+  }
+  .brand-row{display:flex; align-items:baseline; justify-content:space-between; gap:8px;}
+  .brand{font-size:20px; letter-spacing:.08em; display:flex; align-items:center; gap:8px;}
+  .brand .mark{
+    display:inline-block; width:9px; height:9px; border-radius:1px;
+    background:var(--ember); box-shadow:0 0 10px var(--ember-glow);
+    transform:rotate(45deg);
+  }
+  .day-badge{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--iron-400);
+    letter-spacing:.05em;
+  }
+
+  .forge-bar{
+    margin-top:12px; height:6px; border-radius:4px; overflow:hidden;
+    background:var(--iron-800); border:1px solid var(--iron-700);
+    position:relative;
+  }
+  .forge-bar > i{
+    display:block; height:100%; width:0%;
+    background:linear-gradient(90deg, var(--ember-dim), var(--ember) 60%, var(--ember-glow));
+    transition:width .5s ease;
+    box-shadow:0 0 12px rgba(255,138,76,.5);
+  }
+  .forge-caption{
+    display:flex; justify-content:space-between; font-size:10px; color:var(--iron-400);
+    margin-top:5px; font-family:'JetBrains Mono', monospace; letter-spacing:.04em;
+  }
+
+  .tabs{
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:6px; padding:12px 16px 0;
+  }
+  .tab{
+    background:var(--iron-900); border:1px solid var(--iron-700);
+    color:var(--iron-400); padding:10px 4px; border-radius:var(--radius);
+    text-align:center; font-family:'Oswald'; font-size:11.5px;
+    letter-spacing:.05em; text-transform:uppercase; cursor:pointer;
+    transition:.15s;
+  }
+  .tab small{display:block; font-family:'JetBrains Mono'; font-size:9px; margin-top:2px; opacity:.7; letter-spacing:0;}
+  .tab.active{
+    background:linear-gradient(160deg, var(--iron-800), var(--iron-900));
+    border-color:var(--ember-dim); color:var(--iron-100);
+    box-shadow:inset 0 0 0 1px rgba(224,81,31,.25);
+  }
+  .tab.active.accent-steel{border-color:var(--steel-dim); box-shadow:inset 0 0 0 1px rgba(91,138,158,.25);}
+  .tab.active.accent-leg{border-color:var(--leg-dim); box-shadow:inset 0 0 0 1px rgba(138,122,78,.25);}
+
+  main{padding:16px; max-width:640px; margin:0 auto;}
+
+  .session-card{
+    border:1px solid var(--iron-700); border-radius:var(--radius);
+    background:var(--iron-900); padding:16px; margin-bottom:16px;
+    position:relative; overflow:hidden;
+  }
+  .session-card::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--ember);
+  }
+  .session-card.accent-steel::before{background:var(--steel);}
+  .session-card.accent-leg::before{background:var(--leg);}
+  .session-title{font-size:22px; margin-bottom:2px;}
+  .session-sub{color:var(--iron-400); font-size:13px; margin-bottom:10px;}
+  .prep-note{
+    font-size:12px; color:var(--iron-200); background:var(--iron-800);
+    padding:8px 10px; border-radius:var(--radius); margin-bottom:14px; line-height:1.45;
+  }
+  .prep-note b{color:var(--iron-400); font-family:'JetBrains Mono'; font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:3px;}
+  .equip-strip{
+    display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; margin-bottom:2px;
+    scrollbar-width:none;
+  }
+  .equip-strip::-webkit-scrollbar{display:none;}
+  .equip-pill{
+    flex:0 0 auto; font-family:'JetBrains Mono'; font-size:10px; color:var(--iron-400);
+    border:1px solid var(--iron-700); padding:5px 9px; border-radius:20px; white-space:nowrap;
+  }
+  .stat-row{display:flex; gap:18px; flex-wrap:wrap;}
+  .stat{font-family:'JetBrains Mono'; }
+  .stat b{display:block; font-size:18px; color:var(--iron-100);}
+  .stat span{font-size:10px; color:var(--iron-400); text-transform:uppercase; letter-spacing:.05em;}
+
+  .timer-row{display:flex; align-items:center; gap:10px; margin-top:14px;}
+  .timer-display{
+    font-family:'JetBrains Mono'; font-size:26px; letter-spacing:.02em;
+    color:var(--ember-glow); min-width:88px;
+  }
+  .btn{
+    border:1px solid var(--iron-600); background:var(--iron-800); color:var(--iron-100);
+    padding:9px 14px; border-radius:var(--radius); font-family:'Oswald'; font-size:12px;
+    text-transform:uppercase; letter-spacing:.04em; cursor:pointer; transition:.15s;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn.primary{background:var(--ember); border-color:var(--ember); color:#1a0d05; font-weight:600;}
+  .btn.ghost{background:transparent;}
+  .btn.small{padding:6px 10px; font-size:11px;}
+  .btn.full{width:100%;}
+  .btn.edit-on{background:var(--steel-dim); border-color:var(--steel); color:var(--iron-100);}
+  .btn:disabled{opacity:.3; cursor:default;}
+
+  .block{margin-bottom:14px;}
+  .block-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:2px 2px 8px; border-bottom:1px solid var(--iron-700);
+    margin-bottom:10px; gap:8px;
+  }
+  .block-head h2{font-size:13px; color:var(--iron-400); letter-spacing:.08em;}
+  .block-head .count{font-family:'JetBrains Mono'; font-size:11px; color:var(--iron-600);}
+  .block-head-right{display:flex; align-items:center; gap:8px;}
+
+  .edit-banner{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--steel);
+    background:rgba(91,138,158,.1); border:1px dashed var(--steel-dim);
+    padding:8px 10px; border-radius:var(--radius); margin-bottom:10px; line-height:1.5;
+  }
+
+  .exercise{
+    background:var(--iron-900); border:1px solid var(--iron-700); border-radius:var(--radius);
+    margin-bottom:8px; overflow:hidden;
+  }
+  .exercise.editing{border-color:var(--steel-dim);}
+  .ex-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; cursor:pointer;
+  }
+  .ex-name{font-size:15px; font-family:'Archivo'; font-weight:600;}
+  .ex-target{font-family:'JetBrains Mono'; font-size:11px; color:var(--iron-400); margin-top:2px;}
+  .ex-toggle{color:var(--iron-400); font-size:18px; transition:.2s; flex:0 0 auto; margin-left:10px;}
+  .exercise.open .ex-toggle{transform:rotate(45deg); color:var(--ember);}
+
+  .ex-body{max-height:0; overflow:hidden; transition:max-height .3s ease;}
+  .exercise.open .ex-body{max-height:1200px;}
+  .ex-body-inner{padding:0 14px 14px;}
+
+  .cue{
+    font-size:12.5px; color:var(--iron-200); background:var(--iron-800);
+    border-left:2px solid var(--steel); padding:8px 10px; border-radius:0 var(--radius) var(--radius) 0;
+    margin-bottom:12px; line-height:1.45;
+  }
+
+  .setrow{
+    display:grid; grid-template-columns:26px 1fr 1fr 34px;
+    gap:8px; align-items:center; margin-bottom:6px;
+  }
+  .setrow .idx{
+    font-family:'JetBrains Mono'; color:var(--iron-400); font-size:12px; text-align:center;
+  }
+  .setrow input{
+    background:var(--iron-800); border:1px solid var(--iron-700); color:var(--iron-100);
+    border-radius:var(--radius); padding:9px 8px; font-family:'JetBrains Mono'; font-size:14px;
+    width:100%; text-align:center;
+  }
+  .setrow input:focus{outline:none; border-color:var(--ember-dim);}
+  .setrow .check{
+    width:34px; height:34px; border-radius:var(--radius); border:1px solid var(--iron-600);
+    background:var(--iron-800); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:transparent; font-size:15px; transition:.15s;
+  }
+  .setrow.done input{border-color:var(--iron-600); opacity:.65;}
+  .setrow .check.done{background:var(--ok); border-color:var(--ok); color:#12200e;}
+  .col-labels{
+    display:grid; grid-template-columns:26px 1fr 1fr 34px; gap:8px;
+    font-family:'JetBrains Mono'; font-size:9.5px; color:var(--iron-600);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;
+  }
+  .col-labels span:nth-child(2), .col-labels span:nth-child(3){text-align:center;}
+
+  .add-set{
+    margin-top:6px; font-family:'JetBrains Mono'; font-size:11px; color:var(--iron-400);
+    background:none; border:1px dashed var(--iron-600); border-radius:var(--radius);
+    width:100%; padding:7px; cursor:pointer;
+  }
+
+  .log-type-badge{
+    display:inline-block; font-family:'JetBrains Mono'; font-size:9px; letter-spacing:.05em;
+    color:var(--iron-400); border:1px solid var(--iron-700); border-radius:20px;
+    padding:2px 8px; margin-top:4px; text-transform:uppercase;
+  }
+
+  /* ---------- Edit-mode fields ---------- */
+  .edit-fields{padding:0 14px 14px;}
+  .field{margin-bottom:10px;}
+  .field label{
+    display:block; font-family:'JetBrains Mono'; font-size:9.5px; color:var(--iron-600);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
+  }
+  .field input, .field textarea, .field select{
+    width:100%; background:var(--iron-800); border:1px solid var(--iron-700);
+    color:var(--iron-100); border-radius:var(--radius); padding:9px 10px;
+    font-family:'Archivo'; font-size:13.5px; resize:vertical;
+  }
+  .field textarea{min-height:56px; line-height:1.4;}
+  .field input:focus, .field textarea:focus, .field select:focus{outline:none; border-color:var(--steel);}
+  .field-row{display:flex; gap:10px;}
+  .field-row .field{flex:1; margin-bottom:0;}
+  .sets-stepper{display:flex; align-items:center; gap:10px;}
+  .sets-stepper button{
+    width:32px; height:32px; border-radius:var(--radius); border:1px solid var(--iron-600);
+    background:var(--iron-800); color:var(--iron-100); font-size:16px; cursor:pointer;
+  }
+  .sets-stepper .val{font-family:'JetBrains Mono'; font-size:15px; min-width:20px; text-align:center;}
+
+  .reorder-row{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .reorder-row .rbtn{
+    width:38px; height:32px; border-radius:var(--radius); border:1px solid var(--iron-600);
+    background:var(--iron-800); color:var(--iron-100); font-size:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .reorder-row .pos{
+    font-family:'JetBrains Mono'; font-size:10.5px; color:var(--iron-600);
+    text-transform:uppercase; letter-spacing:.05em;
+  }
+
+  .edit-actions{display:flex; justify-content:flex-end; margin-top:2px;}
+  .btn.danger{background:transparent; border-color:var(--bad); color:var(--bad);}
+
+  .add-exercise-btn{
+    width:100%; padding:14px; border:1px dashed var(--steel-dim); border-radius:var(--radius);
+    background:rgba(91,138,158,.06); color:var(--steel); font-family:'Oswald'; font-size:12px;
+    text-transform:uppercase; letter-spacing:.05em; cursor:pointer; margin-top:4px;
+  }
+  .reset-day-btn{
+    width:100%; padding:10px; margin-top:8px; border:1px solid var(--iron-700); border-radius:var(--radius);
+    background:none; color:var(--iron-600); font-family:'JetBrains Mono'; font-size:10.5px; cursor:pointer;
+  }
+
+  .hist-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:11px 14px; background:var(--iron-900); border:1px solid var(--iron-700);
+    border-radius:var(--radius); margin-bottom:7px;
+  }
+  .hist-day{font-size:13px; font-weight:600;}
+  .hist-meta{font-family:'JetBrains Mono'; font-size:10.5px; color:var(--iron-400); margin-top:2px;}
+  .hist-vol{font-family:'JetBrains Mono'; font-size:15px; color:var(--ember-glow); text-align:right;}
+  .hist-vol span{display:block; font-size:9px; color:var(--iron-600); text-transform:uppercase;}
+  .empty{color:var(--iron-600); font-size:12.5px; text-align:center; padding:24px 0; font-family:'JetBrains Mono';}
+
+  .finish-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:linear-gradient(0deg, var(--iron-950) 70%, transparent);
+    padding:14px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+  .finish-inner{max-width:640px; margin:0 auto; display:flex; gap:10px;}
+
+  footer.legal{
+    text-align:center; color:var(--iron-700); font-size:10px; padding:20px 0 90px;
+    font-family:'JetBrains Mono';
+  }
+
+  #installHint{
+    display:none; max-width:640px; margin:0 auto 14px; padding:11px 14px;
+    background:var(--iron-900); border:1px solid var(--steel-dim); border-radius:var(--radius);
+    font-size:12px; color:var(--iron-200); line-height:1.5;
+  }
+  #installHint b{color:var(--steel); font-family:'JetBrains Mono'; font-size:10px; text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:3px;}
+  #installHint .dismiss{float:right; color:var(--iron-600); cursor:pointer; font-family:'JetBrains Mono'; font-size:11px; margin-left:10px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+
+  #toast{
+    position:fixed; left:50%; bottom:calc(86px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(12px);
+    background:var(--iron-800); border:1px solid var(--iron-600); color:var(--iron-100);
+    padding:11px 18px; border-radius:6px; font-family:'Archivo'; font-size:13px;
+    z-index:100; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+    max-width:88vw; text-align:center; box-shadow:var(--shadow);
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  #toast.warn{border-color:var(--warn); color:var(--warn);}
+
+  .btn.armed{background:var(--bad); border-color:var(--bad); color:#2a0e0a;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand-row">
+    <div class="brand"><span class="mark"></span>ANVIL CYCLE</div>
+    <div class="day-badge mono" id="todayLabel">—</div>
+  </div>
+  <div class="forge-bar"><i id="forgeFill"></i></div>
+  <div class="forge-caption">
+    <span id="forgeText">0 / 0 sets forged</span>
+    <span id="forgePct">0%</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <div id="installHint">
+    <span class="dismiss" id="installDismiss">✕</span>
+    <b>Run this as an app</b>
+    In Safari, tap the Share icon, then <b style="display:inline;font-size:12px;text-transform:none;letter-spacing:0;color:var(--iron-100);">Add to Home Screen</b>. Opening it from that icon launches full-screen with no browser bar.
+  </div>
+
+  <section class="session-card" id="sessionCard">
+    <div class="session-title" id="dayTitle">—</div>
+    <div class="session-sub" id="daySub">—</div>
+    <div class="prep-note" id="prepNote"><b>Prep</b><span id="prepText"></span></div>
+    <div class="equip-strip" id="equipStrip"></div>
+    <div class="stat-row">
+      <div class="stat"><b id="statVolume">0</b><span>Volume (lb)</span></div>
+      <div class="stat"><b id="statSets">0/0</b><span>Sets Done</span></div>
+      <div class="stat"><b id="statExercises">0</b><span>Exercises</span></div>
+    </div>
+    <div class="timer-row">
+      <div class="timer-display mono" id="clock">00:00</div>
+      <button class="btn" id="timerToggle">Start</button>
+      <button class="btn ghost small" id="timerReset">Reset</button>
+    </div>
+  </section>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Workout</h2>
+      <div class="block-head-right">
+        <span class="count" id="exCount"></span>
+        <button class="btn small" id="editToggle">Edit Exercises</button>
+      </div>
+    </div>
+    <div id="editBanner" style="display:none;" class="edit-banner">
+      Editing this day's exercises. Rename, retarget, rewrite cues, change how it's logged, resize sets, reorder, delete, or add new ones. Changes save automatically and only affect the day you're viewing.
+    </div>
+    <div id="exerciseList"></div>
+  </div>
+
+  <div class="block">
+    <div class="block-head"><h2>History</h2><span class="count mono" id="histCount"></span></div>
+    <div id="historyList"></div>
+  </div>
+</main>
+
+<div class="finish-bar">
+  <div class="finish-inner">
+    <button class="btn ghost small" id="clearDayBtn">Clear Sets</button>
+    <button class="btn primary full" id="finishBtn">Log Session</button>
+  </div>
+</div>
+
+<footer class="legal">Data saved to this device only · localStorage</footer>
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Factory program ----------------
+     Push / Pull / Legs / Conditioning — functional strength, hypertrophy
+     accessory volume, dedicated core work, and a Zone 2 cardio finisher
+     on every day. No fixed time cap.
+
+     Each exercise carries a logType that decides what the set-log columns
+     look like:
+       "reps"     — weight + reps                 (default, most lifts)
+       "distance" — load + distance (yd or ft)     (carries)
+       "duration" — minutes + seconds              (holds, cardio finishers)
+  */
+  const FACTORY_PROGRAM = {
+    push: {
+      label: "Push", full: "Push Day", accent: "ember",
+      sub: "Functional Pressing · Hypertrophy · Core · Zone 2 Finish",
+      prep: "5 min: banded shoulder dislocates, arm circles, scap push-ups, 10 empty-bar push presses.",
+      equip: ["Barbell + Rack", "Kettlebells", "Bands", "Landmine/Corner", "Cardio Machine"],
+      exercises: [
+        {name:"Barbell Push Press", target:"4 sets × 5 reps", cue:"Dip and drive from the legs — this is a full-body power press, not a strict shoulder press. Catch the bar with arms locked overhead, ribs stacked over hips.", sets:4, logType:"reps"},
+        {name:"Single-Arm Kettlebell Overhead Press", target:"3 sets × 8 reps/side", cue:"Brace hard against the offset load — resist leaning away from the bell. Press in a straight line, stack wrist-elbow-shoulder at lockout.", sets:3, logType:"reps"},
+        {name:"Weighted Push-up", target:"3 sets × 12 reps", cue:"Plate or band across the upper back. Full range, chest to a fist's height off the floor, body stays rigid from heels to head.", sets:3, logType:"reps"},
+        {name:"Kettlebell Floor Press", target:"3 sets × 10-12 reps", cue:"Elbows lightly kiss the floor at the bottom, press straight up. Slow the eccentric down for 2-3 sec — this is the hypertrophy volume for chest and triceps.", sets:3, logType:"reps"},
+        {name:"Landmine Press", target:"3 sets × 10 reps/side", cue:"Press up and slightly across the body. Brace the core like you're about to be hit — this is a loaded anti-rotation drill as much as a press.", sets:3, logType:"reps"},
+        {name:"Band Tricep Pushdown", target:"3 sets × 15 reps", cue:"Pin elbows to your sides for the entire set. Full lockout, controlled return — extra arm hypertrophy volume to finish the pressing chain.", sets:3, logType:"reps"},
+        {name:"Band Pallof Press", target:"3 sets × 10 reps/side", cue:"Anchor the band at chest height, press straight out and hold. The goal is to resist the band pulling you into rotation — brace like someone's trying to twist you.", sets:3, logType:"reps"},
+        {name:"Zone 2 Cardio Finisher", target:"1 set × 20-30 min", cue:"Cardio machine, steady pace you could hold a conversation at — roughly 60-70% max heart rate. This is aerobic base work, not a sprint: if you can't talk, back off the pace.", sets:1, logType:"duration"},
+      ]
+    },
+    pull: {
+      label: "Pull", full: "Pull Day", accent: "ember",
+      sub: "Hinge · Pull · Hypertrophy · Core · Zone 2 Finish",
+      prep: "5 min: band pull-aparts, cat-cow, scap pull-ups, 2×5 light RDLs to groove the hinge.",
+      equip: ["Barbell + Rack", "Pull-up Bar", "Kettlebells", "Bands", "Cardio Machine"],
+      exercises: [
+        {name:"Barbell Deadlift", target:"4 sets × 5 reps", cue:"Bar over midfoot, hips down until shins touch the bar. Push the floor away — think 'leg press' for the first few inches, then finish tall.", sets:4, logType:"reps"},
+        {name:"Pull-ups", target:"4 sets × AMRAP", cue:"Full dead hang at the bottom. Drive elbows down and back, chest to the bar. Quality reps over quantity — add load once bodyweight feels controlled.", sets:4, logType:"reps"},
+        {name:"Single-Arm Kettlebell Row", target:"3 sets × 10 reps/side", cue:"Flat back, brace like you're about to be punched. Row to the hip, not the chest — squeeze the shoulder blade at the top, resist rotating.", sets:3, logType:"reps"},
+        {name:"Band Face Pull", target:"3 sets × 15 reps", cue:"Pull to eye level, lead with the elbows high. Externally rotate at the end range — this is the shoulder-health tax that keeps the pressing healthy.", sets:3, logType:"reps"},
+        {name:"Barbell or Kettlebell Curl", target:"3 sets × 10-12 reps", cue:"Elbows pinned at your sides, no swinging. Squeeze at the top for a full second — dedicated arm hypertrophy volume to close out the pulling chain.", sets:3, logType:"reps"},
+        {name:"Farmer's Carry", target:"4 rounds × 40 yd", cue:"Heavy kettlebells, grip crushed tight. Walk tall, controlled breathing — this is grip and total-body pull strength under load.", sets:4, logType:"distance", unit:"yd"},
+        {name:"Hanging Leg Raise", target:"3 sets × 12 reps", cue:"Dead hang start, curl the pelvis rather than just swinging the legs. No kipping — control the negative on the way down.", sets:3, logType:"reps"},
+        {name:"Zone 2 Cardio Finisher", target:"1 set × 20-30 min", cue:"Cardio machine, steady conversational pace — roughly 60-70% max heart rate. Let the heart rate settle from the lifting before you start, then hold it steady the whole set.", sets:1, logType:"duration"},
+      ]
+    },
+    legs: {
+      label: "Legs", full: "Leg Day", accent: "leg",
+      sub: "Squat · Hinge · Lunge · Core · Zone 2 Finish",
+      prep: "5 min: leg swings, walking knee hugs, bodyweight squats, 2×5 goblet squats to groove depth.",
+      equip: ["Barbell + Rack", "Kettlebells", "Adjustable Bench", "Cardio Machine"],
+      exercises: [
+        {name:"Barbell Back Squat", target:"4 sets × 5 reps", cue:"Brace before the descent, break at the hips and knees together. Drive up through the whole foot, knees track over toes, chest stays proud.", sets:4, logType:"reps"},
+        {name:"Kettlebell Romanian Deadlift", target:"3 sets × 10 reps", cue:"Soft knees, push the hips straight back. Bells stay close to the legs the whole way down — you should feel this in the hamstrings, not the low back.", sets:3, logType:"reps"},
+        {name:"Bulgarian Split Squat", target:"3 sets × 10 reps/side", cue:"Rear foot up on the bench, most of the weight through the front heel. Drop straight down, not forward — this is single-leg hypertrophy volume for quads and glutes.", sets:3, logType:"reps"},
+        {name:"Walking Kettlebell Lunge", target:"3 sets × 12 reps/side", cue:"Step long enough that the front knee stays stacked over the ankle at the bottom. Drive through the front heel to stand, don't push off the back toe.", sets:3, logType:"reps"},
+        {name:"Kettlebell Swings", target:"3 sets × 15 reps", cue:"Hinge, don't squat. Snap the hips explosively — the arms are just along for the ride. This is the power output of the day.", sets:3, logType:"reps"},
+        {name:"Suitcase Carry", target:"3 rounds × 40 yd/side", cue:"Single heavy kettlebell at your side. Resist leaning away from the load — that anti-lateral-flexion fight is the whole point.", sets:3, logType:"distance", unit:"yd"},
+        {name:"Kettlebell Windmill", target:"3 sets × 8 reps/side", cue:"Bell locked overhead, eyes on it the whole rep. Hinge at the hips and reach the free hand toward the floor — this is rotational core control under an overhead load.", sets:3, logType:"reps"},
+        {name:"Zone 2 Cardio Finisher", target:"1 set × 20-30 min", cue:"Cardio machine, steady conversational pace — roughly 60-70% max heart rate. Legs will be fatigued; keep the resistance low enough that pace, not strength, is the limiter.", sets:1, logType:"duration"},
+      ]
+    },
+    conditioning: {
+      label: "Conditioning", full: "Conditioning Day", accent: "steel",
+      sub: "Engine · Rotational Power · Core · Zone 2 Finish",
+      prep: "5-8 min easy pace on the cardio machine or a light row to open up before the work starts.",
+      equip: ["Cardio Machine", "Kettlebells", "Sandbag", "Battle Ropes", "Mace Bell"],
+      exercises: [
+        {name:"Kettlebell Swings", target:"5 rounds × 20 reps", cue:"Hinge, don't squat. Snap the hips explosively — the arms are just along for the ride. Rest 45 sec between rounds.", sets:5, logType:"reps"},
+        {name:"Sandbag Carry + Squat Combo", target:"4 rounds × 30 yd + 10 squats", cue:"Bear-hug the bag for the carry, brace hard through the midsection. Drop straight into 10 bodyweight squats at the end of each carry, no rest between.", sets:4, logType:"distance", unit:"yd"},
+        {name:"Battle Rope Slams", target:"4 rounds × 30 sec", cue:"Full overhead extension, slam down hard using the hips and lats, not just the arms. Rest 30 sec between rounds.", sets:4, logType:"duration"},
+        {name:"Mace Bell 360s", target:"4 rounds × 6 reps/side", cue:"Let the mace's momentum guide the path, don't muscle it. Keep the core braced as it swings behind your back.", sets:4, logType:"reps"},
+        {name:"Weighted Plank Hold", target:"3 sets × 45 sec", cue:"Plate on the lower back. Squeeze glutes, ribs down, don't let the hips sag or pike — this is the engine's core finisher.", sets:3, logType:"duration"},
+        {name:"Zone 2 Cardio Finisher", target:"1 set × 20-30 min", cue:"Let heart rate drop out of the metcon zone first, then settle into a steady conversational pace — roughly 60-70% max heart rate. This builds the aerobic base that makes the intervals above easier over time.", sets:1, logType:"duration"},
+      ]
+    }
+  };
+
+  const DAY_ORDER = ["push","pull","legs","conditioning"];
+  const DAY_META = {};
+  DAY_ORDER.forEach(d=>{
+    const f = FACTORY_PROGRAM[d];
+    DAY_META[d] = {label:f.label, full:f.full, accent:f.accent, sub:f.sub, equip:f.equip, prep:f.prep};
+  });
+
+  // Stable, version-free keys — history in particular should never reset
+  // just because the exercise list or logging structure changes.
+  const STORE_KEY = "anvilcycle_state";
+  const HIST_KEY = "anvilcycle_history";
+
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  // One-time recovery: pull history out of any older versioned keys
+  // (anvilcycle_v3_history, _v4_, etc.) left behind by earlier rebuilds,
+  // merge it into the stable key above, and never repeat the merge.
+  function migrateLegacyHistory(){
+    const flag = "anvilcycle_history_migrated_v1";
+    if(localStorage.getItem(flag)) return;
+    let combined = [];
+    try{
+      const cur = localStorage.getItem(HIST_KEY);
+      if(cur) combined = JSON.parse(cur) || [];
+    }catch(e){}
+    const seen = new Set(combined.map(h=>JSON.stringify(h)));
+    try{
+      for(let i=0; i<localStorage.length; i++){
+        const key = localStorage.key(i);
+        if(!key || key === HIST_KEY) continue;
+        if(!/^anvilcycle_v\d+_history$/.test(key)) continue;
+        try{
+          const old = JSON.parse(localStorage.getItem(key));
+          if(Array.isArray(old)){
+            old.forEach(h=>{
+              const sig = JSON.stringify(h);
+              if(!seen.has(sig)){ combined.push(h); seen.add(sig); }
+            });
+          }
+        }catch(e){}
+      }
+    }catch(e){}
+    combined.sort((a,b)=> new Date(a.date) - new Date(b.date));
+    if(combined.length){
+      try{ localStorage.setItem(HIST_KEY, JSON.stringify(combined)); }catch(e){}
+    }
+    try{ localStorage.setItem(flag, "1"); }catch(e){}
+  }
+  migrateLegacyHistory();
+
+  function blankSet(logType){
+    if(logType === "distance") return {load:"", distance:"", done:false};
+    if(logType === "duration") return {min:"", sec:"", done:false};
+    return {weight:"", reps:"", done:false};
+  }
+
+  /* ---------------- Toast (no native dialogs) ---------------- */
+  const toastEl = document.getElementById("toast");
+  let toastTimer = null;
+  function showToast(msg, warn){
+    toastEl.textContent = msg;
+    toastEl.className = warn ? "warn" : "";
+    void toastEl.offsetWidth;
+    toastEl.classList.add("show");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ toastEl.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------------- Arm-to-confirm (no native dialogs) ---------------- */
+  function armToConfirm(btn, confirmLabel, action){
+    let armed = false;
+    let revertTimer = null;
+    const originalLabel = btn.textContent;
+    btn.addEventListener("click", ()=>{
+      if(!armed){
+        armed = true;
+        btn.textContent = confirmLabel;
+        btn.classList.add("armed");
+        revertTimer = setTimeout(()=>{
+          armed = false;
+          btn.textContent = originalLabel;
+          btn.classList.remove("armed");
+        }, 4000);
+      } else {
+        clearTimeout(revertTimer);
+        armed = false;
+        btn.textContent = originalLabel;
+        btn.classList.remove("armed");
+        action();
+      }
+    });
+  }
+
+  /* ---------------- State ---------------- */
+  let state = loadState();
+  let history = loadHistory();
+  let currentDay = state.currentDay || "push";
+  let editMode = false;
+  let timerHandle = null;
+  let timerRunning = false;
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed.programs) return parsed;
+      }
+    }catch(e){}
+    return freshState();
+  }
+  function freshState(){
+    const s = {currentDay:"push", programs:{}, logs:{}, elapsedSeconds:0};
+    DAY_ORDER.forEach(d=>{
+      s.programs[d] = clone(FACTORY_PROGRAM[d].exercises);
+      s.logs[d] = s.programs[d].map(ex => ({
+        sets: Array.from({length: ex.sets}, ()=>blankSet(ex.logType)),
+        open:false
+      }));
+    });
+    return s;
+  }
+  function loadHistory(){
+    try{
+      const raw = localStorage.getItem(HIST_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return [];
+  }
+  function saveState(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function saveHistory(){
+    try{ localStorage.setItem(HIST_KEY, JSON.stringify(history)); }catch(e){}
+  }
+
+  DAY_ORDER.forEach(d=>{
+    if(!state.programs[d]) state.programs[d] = clone(FACTORY_PROGRAM[d].exercises);
+    if(!state.logs[d]) state.logs[d] = [];
+    const prog = state.programs[d];
+    const logs = state.logs[d];
+    prog.forEach(ex=>{ if(!ex.logType) ex.logType = "reps"; if(ex.logType==="distance" && !ex.unit) ex.unit = "yd"; });
+    while(logs.length < prog.length){
+      const ex = prog[logs.length];
+      logs.push({ sets: Array.from({length: ex.sets||3}, ()=>blankSet(ex.logType)), open:false });
+    }
+    while(logs.length > prog.length){ logs.pop(); }
+    prog.forEach((ex, i)=>{
+      const want = Math.max(1, ex.sets||1);
+      const rows = logs[i].sets;
+      while(rows.length < want) rows.push(blankSet(ex.logType));
+      while(rows.length > want) rows.pop();
+    });
+  });
+  if(typeof state.elapsedSeconds !== "number") state.elapsedSeconds = 0;
+
+  function accentClass(accent){
+    if(accent === "steel") return "accent-steel";
+    if(accent === "leg") return "accent-leg";
+    return "";
+  }
+
+  /* ---------------- Render: tabs ---------------- */
+  const tabsEl = document.getElementById("tabs");
+  function renderTabs(){
+    tabsEl.innerHTML = "";
+    DAY_ORDER.forEach(d=>{
+      const meta = DAY_META[d];
+      const btn = document.createElement("div");
+      btn.className = "tab" + (d===currentDay ? " active " + accentClass(meta.accent) : "");
+      btn.innerHTML = `${meta.label}<small>${countDone(d)}/${countTotal(d)}</small>`;
+      btn.addEventListener("click", ()=>{ switchDay(d); });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function countTotal(d){ return state.logs[d].reduce((a,ex)=>a+ex.sets.length,0); }
+  function countDone(d){ return state.logs[d].reduce((a,ex)=>a+ex.sets.filter(s=>s.done).length,0); }
+  function volumeFor(d){
+    let v=0;
+    const prog = state.programs[d];
+    state.logs[d].forEach((ex,i)=>{
+      if(prog[i] && prog[i].logType === "reps"){
+        ex.sets.forEach(s=>{
+          if(s.done){
+            const w = parseFloat(s.weight)||0;
+            const r = parseFloat(s.reps)||0;
+            v += w*r;
+          }
+        });
+      }
+    });
+    return v;
+  }
+
+  function switchDay(d){
+    currentDay = d;
+    state.currentDay = d;
+    saveState();
+    renderAll();
+  }
+
+  /* ---------------- Render: session card ---------------- */
+  function renderSession(){
+    const meta = DAY_META[currentDay];
+    document.getElementById("sessionCard").className = "session-card " + accentClass(meta.accent);
+    document.getElementById("dayTitle").textContent = meta.full;
+    document.getElementById("daySub").textContent = meta.sub;
+    document.getElementById("prepText").textContent = meta.prep;
+    document.getElementById("todayLabel").textContent = meta.label.toUpperCase() + " · " + new Date().toLocaleDateString(undefined,{month:'short', day:'numeric'});
+
+    const equipStrip = document.getElementById("equipStrip");
+    equipStrip.innerHTML = meta.equip.map(e=>`<span class="equip-pill">${e}</span>`).join("");
+
+    const total = countTotal(currentDay);
+    const done = countDone(currentDay);
+    document.getElementById("statVolume").textContent = volumeFor(currentDay).toLocaleString();
+    document.getElementById("statSets").textContent = `${done}/${total}`;
+    document.getElementById("statExercises").textContent = state.programs[currentDay].length;
+    document.getElementById("exCount").textContent = `${state.programs[currentDay].length} EXERCISES`;
+
+    const pct = total ? Math.round((done/total)*100) : 0;
+    document.getElementById("forgeFill").style.width = pct + "%";
+    document.getElementById("forgeText").textContent = `${done} / ${total} sets forged`;
+    document.getElementById("forgePct").textContent = pct + "%";
+  }
+
+  /* ---------------- Render: exercise list ---------------- */
+  const listEl = document.getElementById("exerciseList");
+  const editBanner = document.getElementById("editBanner");
+  const editToggleBtn = document.getElementById("editToggle");
+
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  const LOG_TYPE_LABEL = {reps:"Weight × Reps", distance:"Distance", duration:"Duration"};
+
+  function colLabelsFor(ex){
+    if(ex.logType === "distance") return ["Load (lb)", `Distance (${ex.unit === "ft" ? "ft" : "yd"})`];
+    if(ex.logType === "duration") return ["Min", "Sec"];
+    return ["Weight", "Reps"];
+  }
+
+  function renderExercises(){
+    const prog = state.programs[currentDay];
+    const logs = state.logs[currentDay];
+    listEl.innerHTML = "";
+
+    prog.forEach((ex, exi)=>{
+      const logState = logs[exi];
+      const wrap = document.createElement("div");
+      wrap.className = "exercise" + (logState.open ? " open":"") + (editMode ? " editing":"");
+
+      const doneCount = logState.sets.filter(s=>s.done).length;
+
+      const head = document.createElement("div");
+      head.className = "ex-head";
+      head.innerHTML = `
+        <div>
+          <div class="ex-name">${escapeHtml(ex.name)}</div>
+          <div class="ex-target">${escapeHtml(ex.target)}${editMode ? "" : " · " + doneCount + "/" + logState.sets.length + " done"}</div>
+        </div>
+        <div class="ex-toggle">${editMode ? "" : "+"}</div>
+      `;
+      if(!editMode){
+        head.addEventListener("click", ()=>{
+          logState.open = !logState.open;
+          saveState();
+          renderExercises();
+        });
+      }
+      wrap.appendChild(head);
+
+      if(editMode){
+        const fields = document.createElement("div");
+        fields.className = "edit-fields";
+
+        // --- reorder row ---
+        const reorderRow = document.createElement("div");
+        reorderRow.className = "reorder-row";
+        reorderRow.innerHTML = `
+          <button type="button" class="rbtn r-up" ${exi===0 ? "disabled":""}>▲</button>
+          <button type="button" class="rbtn r-down" ${exi===prog.length-1 ? "disabled":""}>▼</button>
+          <span class="pos">Position ${exi+1} of ${prog.length}</span>
+        `;
+        reorderRow.querySelector(".r-up").addEventListener("click", ()=>{
+          if(exi===0) return;
+          [prog[exi-1], prog[exi]] = [prog[exi], prog[exi-1]];
+          [logs[exi-1], logs[exi]] = [logs[exi], logs[exi-1]];
+          saveState();
+          renderExercises();
+        });
+        reorderRow.querySelector(".r-down").addEventListener("click", ()=>{
+          if(exi===prog.length-1) return;
+          [prog[exi+1], prog[exi]] = [prog[exi], prog[exi+1]];
+          [logs[exi+1], logs[exi]] = [logs[exi], logs[exi+1]];
+          saveState();
+          renderExercises();
+        });
+        fields.appendChild(reorderRow);
+
+        const restFields = document.createElement("div");
+        restFields.innerHTML = `
+          <div class="field">
+            <label>Exercise Name</label>
+            <input type="text" class="f-name" value="${escapeHtml(ex.name)}">
+          </div>
+          <div class="field">
+            <label>Target (sets × reps, tempo, etc.)</label>
+            <input type="text" class="f-target" value="${escapeHtml(ex.target)}">
+          </div>
+          <div class="field">
+            <label>Form Cue</label>
+            <textarea class="f-cue">${escapeHtml(ex.cue)}</textarea>
+          </div>
+          <div class="field-row" style="margin-bottom:10px;">
+            <div class="field">
+              <label>Logged As</label>
+              <select class="f-logtype">
+                <option value="reps" ${ex.logType==="reps"?"selected":""}>Weight × Reps</option>
+                <option value="distance" ${ex.logType==="distance"?"selected":""}>Distance (carries, etc.)</option>
+                <option value="duration" ${ex.logType==="duration"?"selected":""}>Duration (holds, cardio)</option>
+              </select>
+            </div>
+            <div class="field f-unit-wrap" style="${ex.logType==='distance' ? '' : 'display:none;'}">
+              <label>Distance Unit</label>
+              <select class="f-unit">
+                <option value="yd" ${ex.unit!=="ft"?"selected":""}>Yards</option>
+                <option value="ft" ${ex.unit==="ft"?"selected":""}>Feet</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Logged Set Rows</label>
+            <div class="sets-stepper">
+              <button type="button" class="f-dec">−</button>
+              <span class="val f-count">${ex.sets}</span>
+              <button type="button" class="f-inc">+</button>
+            </div>
+          </div>
+          <div class="edit-actions">
+            <button class="btn danger small f-delete" type="button">Delete Exercise</button>
+          </div>
+        `;
+        fields.appendChild(restFields);
+
+        restFields.querySelector(".f-name").addEventListener("input", (e)=>{
+          ex.name = e.target.value; saveState(); renderSession();
+        });
+        restFields.querySelector(".f-target").addEventListener("input", (e)=>{
+          ex.target = e.target.value; saveState();
+        });
+        restFields.querySelector(".f-cue").addEventListener("input", (e)=>{
+          ex.cue = e.target.value; saveState();
+        });
+
+        const unitWrap = restFields.querySelector(".f-unit-wrap");
+        restFields.querySelector(".f-logtype").addEventListener("change", (e)=>{
+          const newType = e.target.value;
+          if(newType !== ex.logType){
+            ex.logType = newType;
+            if(newType === "distance" && !ex.unit) ex.unit = "yd";
+            logState.sets = Array.from({length: ex.sets}, ()=>blankSet(ex.logType));
+            saveState();
+            showToast(`Log fields switched to ${LOG_TYPE_LABEL[newType]} — old entries for this exercise were cleared.`);
+          }
+          unitWrap.style.display = newType === "distance" ? "" : "none";
+          renderExercises();
+          renderSession();
+        });
+        restFields.querySelector(".f-unit").addEventListener("change", (e)=>{
+          ex.unit = e.target.value;
+          saveState();
+          renderSession();
+        });
+
+        const countLbl = restFields.querySelector(".f-count");
+        restFields.querySelector(".f-inc").addEventListener("click", ()=>{
+          ex.sets = Math.min(12, (ex.sets||1)+1);
+          countLbl.textContent = ex.sets;
+          logState.sets.push(blankSet(ex.logType));
+          saveState(); renderSession(); renderTabs();
+        });
+        restFields.querySelector(".f-dec").addEventListener("click", ()=>{
+          ex.sets = Math.max(1, (ex.sets||1)-1);
+          countLbl.textContent = ex.sets;
+          if(logState.sets.length > ex.sets) logState.sets.pop();
+          saveState(); renderSession(); renderTabs();
+        });
+
+        const deleteBtn = restFields.querySelector(".f-delete");
+        armToConfirm(deleteBtn, "Tap Again to Delete", ()=>{
+          if(prog.length <= 1){
+            showToast("Every day needs at least one exercise.", true);
+            return;
+          }
+          const removedName = ex.name;
+          prog.splice(exi,1);
+          logs.splice(exi,1);
+          saveState();
+          renderExercises();
+          renderSession();
+          renderTabs();
+          showToast(`Removed "${removedName}"`);
+        });
+
+        wrap.appendChild(fields);
+        listEl.appendChild(wrap);
+        return;
+      }
+
+      const body = document.createElement("div");
+      body.className = "ex-body";
+      const inner = document.createElement("div");
+      inner.className = "ex-body-inner";
+
+      const cue = document.createElement("div");
+      cue.className = "cue";
+      cue.textContent = ex.cue;
+      inner.appendChild(cue);
+
+      const [labelA, labelB] = colLabelsFor(ex);
+      const colLabels = document.createElement("div");
+      colLabels.className = "col-labels";
+      colLabels.innerHTML = `<span></span><span>${labelA}</span><span>${labelB}</span><span></span>`;
+      inner.appendChild(colLabels);
+
+      logState.sets.forEach((s, si)=>{
+        const row = document.createElement("div");
+        row.className = "setrow" + (s.done ? " done":"");
+
+        let fieldAVal, fieldBVal, fieldAPh, fieldBPh, fieldAMode, fieldBMode, keyA, keyB;
+        if(ex.logType === "distance"){
+          keyA="load"; keyB="distance"; fieldAVal=s.load; fieldBVal=s.distance;
+          fieldAPh="lb"; fieldBPh=ex.unit==="ft"?"ft":"yd"; fieldAMode="decimal"; fieldBMode="decimal";
+        } else if(ex.logType === "duration"){
+          keyA="min"; keyB="sec"; fieldAVal=s.min; fieldBVal=s.sec;
+          fieldAPh="min"; fieldBPh="sec"; fieldAMode="numeric"; fieldBMode="numeric";
+        } else {
+          keyA="weight"; keyB="reps"; fieldAVal=s.weight; fieldBVal=s.reps;
+          fieldAPh="lb"; fieldBPh="reps"; fieldAMode="decimal"; fieldBMode="numeric";
+        }
+
+        row.innerHTML = `
+          <div class="idx">${si+1}</div>
+          <input inputmode="${fieldAMode}" placeholder="${fieldAPh}" value="${fieldAVal}">
+          <input inputmode="${fieldBMode}" placeholder="${fieldBPh}" value="${fieldBVal}">
+          <div class="check ${s.done ? "done":""}">✓</div>
+        `;
+        const [inputA, inputB] = row.querySelectorAll("input");
+        inputA.addEventListener("input", (e)=>{ s[keyA] = e.target.value; saveState(); });
+        inputB.addEventListener("input", (e)=>{ s[keyB] = e.target.value; renderSession(); saveState(); });
+        row.querySelector(".check").addEventListener("click", ()=>{
+          s.done = !s.done;
+          saveState();
+          renderExercises();
+          renderSession();
+          renderTabs();
+        });
+        inner.appendChild(row);
+      });
+
+      const addBtn = document.createElement("button");
+      addBtn.className = "add-set";
+      addBtn.textContent = "+ Add Set";
+      addBtn.addEventListener("click", ()=>{
+        logState.sets.push(blankSet(ex.logType));
+        ex.sets = logState.sets.length;
+        saveState();
+        renderExercises();
+        renderSession();
+        renderTabs();
+      });
+      inner.appendChild(addBtn);
+
+      body.appendChild(inner);
+      wrap.appendChild(body);
+      listEl.appendChild(wrap);
+    });
+
+    if(editMode){
+      const addExBtn = document.createElement("button");
+      addExBtn.className = "add-exercise-btn";
+      addExBtn.type = "button";
+      addExBtn.textContent = "+ Add Exercise";
+      addExBtn.addEventListener("click", ()=>{
+        prog.push({name:"New Exercise", target:"3 sets × 10 reps", cue:"", sets:3, logType:"reps"});
+        logs.push({ sets: Array.from({length:3}, ()=>blankSet("reps")), open:false });
+        saveState();
+        renderExercises();
+        renderSession();
+        renderTabs();
+      });
+      listEl.appendChild(addExBtn);
+
+      const resetBtn = document.createElement("button");
+      resetBtn.className = "reset-day-btn";
+      resetBtn.type = "button";
+      resetBtn.textContent = `Reset ${DAY_META[currentDay].label} to Default Exercises`;
+      armToConfirm(resetBtn, "Tap Again to Reset Day", ()=>{
+        state.programs[currentDay] = clone(FACTORY_PROGRAM[currentDay].exercises);
+        state.logs[currentDay] = state.programs[currentDay].map(ex => ({
+          sets: Array.from({length: ex.sets}, ()=>blankSet(ex.logType)),
+          open:false
+        }));
+        saveState();
+        renderAll();
+        showToast(`${DAY_META[currentDay].label} reset to defaults`);
+      });
+      listEl.appendChild(resetBtn);
+    }
+  }
+
+  editToggleBtn.addEventListener("click", ()=>{
+    editMode = !editMode;
+    editToggleBtn.textContent = editMode ? "Done Editing" : "Edit Exercises";
+    editToggleBtn.className = "btn small" + (editMode ? " edit-on" : "");
+    editBanner.style.display = editMode ? "block" : "none";
+    renderExercises();
+  });
+
+  /* ---------------- History ---------------- */
+  function renderHistory(){
+    const listEl = document.getElementById("historyList");
+    document.getElementById("histCount").textContent = history.length ? `${history.length} LOGGED` : "";
+    if(!history.length){
+      listEl.innerHTML = `<div class="empty">No sessions logged yet. Finish a workout below to start your history.</div>`;
+      return;
+    }
+    listEl.innerHTML = "";
+    history.slice().reverse().slice(0,25).forEach(h=>{
+      const item = document.createElement("div");
+      item.className = "hist-item";
+      item.innerHTML = `
+        <div>
+          <div class="hist-day">${escapeHtml(h.dayLabel)}</div>
+          <div class="hist-meta">${h.date} · ${h.setsDone}/${h.setsTotal} sets</div>
+        </div>
+        <div class="hist-vol">${h.volume.toLocaleString()}<span>lb vol</span></div>
+      `;
+      listEl.appendChild(item);
+    });
+  }
+
+  /* ---------------- Timer (uncapped stopwatch) ---------------- */
+  const clockEl = document.getElementById("clock");
+  const timerToggleBtn = document.getElementById("timerToggle");
+
+  function formatTime(sec){
+    sec = Math.max(0, sec);
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  function renderClock(){
+    clockEl.textContent = formatTime(state.elapsedSeconds);
+  }
+  function tick(){
+    state.elapsedSeconds += 1;
+    renderClock();
+    saveState();
+  }
+  function startTimer(){
+    if(timerRunning) return;
+    timerRunning = true;
+    timerToggleBtn.textContent = "Pause";
+    timerHandle = setInterval(tick, 1000);
+  }
+  function stopTimer(){
+    timerRunning = false;
+    timerToggleBtn.textContent = "Start";
+    if(timerHandle){ clearInterval(timerHandle); timerHandle = null; }
+  }
+  timerToggleBtn.addEventListener("click", ()=>{
+    if(timerRunning) stopTimer(); else startTimer();
+  });
+  document.getElementById("timerReset").addEventListener("click", ()=>{
+    stopTimer();
+    state.elapsedSeconds = 0;
+    renderClock();
+    saveState();
+  });
+
+  /* ---------------- Finish / Clear ---------------- */
+  document.getElementById("finishBtn").addEventListener("click", ()=>{
+    const meta = DAY_META[currentDay];
+    const total = countTotal(currentDay);
+    const done = countDone(currentDay);
+    if(done === 0){
+      showToast("Log at least one set before finishing the session.", true);
+      return;
+    }
+    history.push({
+      day: currentDay,
+      dayLabel: meta.full,
+      date: new Date().toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'}),
+      setsDone: done,
+      setsTotal: total,
+      volume: volumeFor(currentDay)
+    });
+    saveHistory();
+    renderHistory();
+    stopTimer();
+    showToast(`${meta.full} logged — ${done}/${total} sets, ${volumeFor(currentDay).toLocaleString()} lb volume.`);
+  });
+
+  armToConfirm(document.getElementById("clearDayBtn"), "Tap Again to Clear", ()=>{
+    state.logs[currentDay] = state.programs[currentDay].map(ex => ({
+      sets: Array.from({length: ex.sets}, ()=>blankSet(ex.logType)),
+      open:false
+    }));
+    saveState();
+    renderAll();
+    showToast("Sets cleared for today");
+  });
+
+  /* ---------------- Install hint ---------------- */
+  (function initInstallHint(){
+    const hint = document.getElementById("installHint");
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const dismissed = localStorage.getItem("anvilcycle_install_hint_dismissed") === "1";
+    if(!isStandalone && !dismissed){
+      hint.style.display = "block";
+    }
+    document.getElementById("installDismiss").addEventListener("click", ()=>{
+      hint.style.display = "none";
+      localStorage.setItem("anvilcycle_install_hint_dismissed", "1");
+    });
+  })();
+
+  /* ---------------- Render all ---------------- */
+  function renderAll(){
+    renderTabs();
+    renderSession();
+    renderExercises();
+    renderHistory();
+    renderClock();
+  }
+
+  renderAll();
+})();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
